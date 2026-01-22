@@ -25,5 +25,8 @@ test = { features = ["test"], solve-group = "default" }
 [tool.pixi.feature.test.tasks]
 test = "pytest"
 
+[tool.pixi.dependencies]
+tqdm = ">=4.67.1,<5"
+
 [dependency-groups]
 test = ["pytest"]

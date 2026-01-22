@@ -6,7 +6,7 @@ from typing import Self
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
-    filename=(Path(__file__).parents[1] / Path("log/fasta.log")),
+    filename=(Path(__file__).parents[2] / Path("log/fasta.log")),
     encoding="utf-8",
     level=logging.DEBUG,
 )
