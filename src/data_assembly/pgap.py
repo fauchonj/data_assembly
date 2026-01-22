@@ -51,7 +51,7 @@ def get_pgap_inputs(
 def run_pgap(args: tuple[Path, Path, str]):
     """Run pgap."""
     (input_path, output_path, org_name) = args
-    cmd = f"/home/jfauchon/.local/bin/pgap.py -n -d -g {str(input_path)} -o {str(output_path)} -s {quote(org_name)}"
+    cmd = f"/home/pgap/pgap.py -n -d -g {str(input_path)} -o {str(output_path)} -s {quote(org_name)}"
 
     process = subprocess.Popen(cmd, text=True, shell=True)
     returncode = process.wait()
