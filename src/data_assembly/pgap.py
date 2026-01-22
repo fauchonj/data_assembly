@@ -79,7 +79,7 @@ def parse_genome(args: tuple[Path, Path]):
 if __name__ == "__main__":
     pgap_inputs = get_pgap_inputs(
         Path("/data/pgap/parsed_genomes/thermococcales"),
-        Path("/data/pgap/proteomes/thermococcales"),
+        Path("/home/pgap/proteomes/thermococcales"),
         Path(__file__).parents[2] / Path("input_data/thermococcales.tsv"),
     )
     with Pool(8) as p:
