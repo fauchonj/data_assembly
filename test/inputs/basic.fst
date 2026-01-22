@@ -1,0 +1,2 @@
+> Basic fasta file
+AAAA
