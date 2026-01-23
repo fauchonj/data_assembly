@@ -4,3 +4,4 @@
 output_data/
 input_data/
 log/
+__pycache__
