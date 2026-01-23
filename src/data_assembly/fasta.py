@@ -59,11 +59,22 @@ class Fasta:
 
     def remove_first_last_n(self):
         """Remove first and last nucleotides in sequences being N."""
+        new_seqs = []
         for i, seq in enumerate(self.sequences):
-            if seq[0] == "N":
-                self.sequences[i] = seq[1:]
-            if seq[-1] == "N":
-                self.sequences[i] = seq[:-1]
+            n_id_min = 0
+            n_id_max = len(seq) - 1
+            while seq[n_id_min] == "N":
+                n_id_min += 1
+            while seq[n_id_max] == "N":
+                n_id_max -= 1
+
+            new_seq = seq[n_id_min : n_id_max + 1 :]
+            if new_seq != 0:
+                new_seqs.append(new_seq)
+            else:
+                print(i, len(new_seq))
+                self.titles.pop(i)
+        self.sequences = new_seqs
 
     def to_fasta_file(self, output_path: Path):
         """Write the fasta in a fasta file."""
@@ -75,3 +86,45 @@ class Fasta:
                     for i in range(0, len(seq), 50)
                 ]
                 f.writelines([title + "\n", *sequences])
+
+    @property
+    def in_pgap_range(self) -> bool:
+        """Get if the genome len is in ranges of PGAP limits.
+
+        PGAP limits are 10e3 and 100e6.
+        """
+        genome_len = 0
+        for seq in self.sequences:
+            genome_len += len(seq)
+        return 10e3 < genome_len and genome_len < 100e6
+
+    def remove_all_n_seq(self):
+        """Remove sequences with only n in it."""
+        for i, seq in enumerate(self.sequences):
+            remove = True
+            for elem in seq:
+                if elem != "N":
+                    remove = False
+                    break
+            if remove:
+                self.sequences.pop(i)
+                self.titles.pop(i)
+
+    def reduce_successives_n(self, limit=9):
+        """Reduce the number of successives N in a sequence.
+
+        The `limit` parameter define the limit when all N after this one will be removed.
+        """
+        n_id = 0
+        new_sequences = []
+        for seq in self.sequences:
+            new_seq = ""
+            for elem in seq:
+                if elem == "N":
+                    n_id += 1
+                else:
+                    n_id = 0
+                if n_id <= limit:
+                    new_seq += elem
+            new_sequences.append(new_seq)
+        self.sequences = new_sequences

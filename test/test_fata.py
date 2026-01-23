@@ -117,3 +117,33 @@ def test_write_faste(input_path: Path):
         Path(__file__).parent / Path(f"results/{input_path.stem}{input_path.suffix}")
     )
     assert 0 == 0
+
+
+@pytest.mark.parametrize(
+    "input_path, expect_result",
+    [
+        (
+            Path(__file__).parent / Path("inputs/all_n.fst"),
+            ["AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"],
+        ),
+    ],
+)
+def test_all_n(input_path, expect_result):
+    fasta = Fasta.from_fasta_file(input_path)
+    fasta.remove_all_n_seq()
+    assert fasta.sequences == expect_result
+
+
+@pytest.mark.parametrize(
+    "input_path, expect_result",
+    [
+        (
+            Path(__file__).parent / Path("inputs/n_successif.fst"),
+            ["AANNNNNNNNNBB", "AANNNNNB", "AANNNNNNNNNB"],
+        ),
+    ],
+)
+def test_n_successif(input_path, expect_result):
+    fasta = Fasta.from_fasta_file(input_path)
+    fasta.reduce_successives_n()
+    assert fasta.sequences == expect_result
