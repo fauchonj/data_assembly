@@ -1,0 +1,6 @@
+fasta:
+  class: File
+  location:
+submol:
+  class: File
+  location: 

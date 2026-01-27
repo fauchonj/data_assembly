@@ -71,11 +71,11 @@ def run_pgap(output_path: Path, input_yaml: Path):
 
 def create_input_pgap(genome_path: Path, genus_species: str, strain: str):
     """Create PGAP input yaml file and its submol."""
-    with (Path(__file__).parents[2] / Path("input_data/template_pgap.yaml")).open(
+    with (Path(__file__).parents[2] / Path("templates/template_pgap.yaml")).open(
         "r"
     ) as f:
         input_yaml = yaml.load(f)
-    with (Path(__file__).parents[2] / Path("input_data/template_submol.yaml")).open(
+    with (Path(__file__).parents[2] / Path("templates/template_submol.yaml")).open(
         "r"
     ) as f:
         submol_yaml = yaml.load(f)
