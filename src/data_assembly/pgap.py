@@ -3,22 +3,10 @@
 from pathlib import Path
 import subprocess
 import csv
-import tqdm
-from shlex import quote
 import logging
-from data_assembly.fasta import parse_genome
-from multiprocessing import Pool
-from data_assembly.assembly_summary import get_column_from_tsv
 from parallelbar import progress_map
-from ruyaml import YAML
-from ruyaml.scalarstring import SingleQuotedScalarString
+import yaml
 
-yaml = YAML()
-yaml.default_flow_style = "'"
-# yaml.default_style = "'"
-yaml.preserve_quotes = True
-yaml.explicit_start = True
-yaml.explicit_end = True
 logger = logging.getLogger(__name__)
 logging.basicConfig(
     filename=(Path(__file__).parents[2] / Path("log/pgap.log")),
@@ -43,21 +31,26 @@ def get_genome_file_from_accession(
 def get_pgap_inputs(dir_genomes: Path, tsv_path: Path) -> list[tuple[Path, Path, str]]:
     """Get inputs of the pgap command from a tsv files and input to search genome in."""
     pgap_inputs = []
+    paths = []
     with tsv_path.open("r") as tsv_file:
-        for line in tsv_file.readlines():
+        tsv_reader = csv.reader(tsv_file, delimiter="\t")
+        next(tsv_reader)
+        for line in tsv_reader:
             genome_accession = line[1]
             org_name = line[3]
             strain = line[7]
-            genome_path = get_genome_file_from_accession(dir_genomes, genome_accession)
-            if genome_path:
+            genome_path = get_genome_file_from_accession(
+                dir_genomes, "GCR_" + genome_accession.split("_")[1]
+            )
+            if genome_path and genome_path not in paths:
                 pgap_inputs.append((genome_path, strain, org_name))
+                paths.append(genome_path)
     return pgap_inputs
 
 
 def run_pgap(output_path: Path, input_yaml: Path):
     """Run pgap."""
     cmd = f"/home/pgap/pgap.py -n -d -o {str(output_path)} {str(input_yaml)}"
-
     process = subprocess.Popen(cmd, text=True, shell=True)
     returncode = process.wait()
 
@@ -74,11 +67,12 @@ def create_input_pgap(genome_path: Path, genus_species: str, strain: str):
     with (Path(__file__).parents[2] / Path("templates/template_pgap.yaml")).open(
         "r"
     ) as f:
-        input_yaml = yaml.load(f)
+        input_yaml = yaml.safe_load(f)
+
     with (Path(__file__).parents[2] / Path("templates/template_submol.yaml")).open(
         "r"
     ) as f:
-        submol_yaml = yaml.load(f)
+        submol_yaml = yaml.safe_load(f)
 
     Path(f"/tmp/{genome_path.stem}").mkdir(exist_ok=False)
     genome_path.copy(
@@ -90,14 +84,14 @@ def create_input_pgap(genome_path: Path, genus_species: str, strain: str):
     )
     input_yaml["submol"]["location"] = f"/tmp/{genome_path.stem}/submol.yaml"
 
-    submol_yaml["organism"]["genus_species"] = SingleQuotedScalarString(genus_species)
-    submol_yaml["organism"]["strain"] = SingleQuotedScalarString(strain)
+    submol_yaml["organism"]["genus_species"] = genus_species
+    submol_yaml["organism"]["strain"] = strain
 
     with Path(f"/tmp/{genome_path.stem}/submol.yaml").open("w+") as f:
-        yaml.dump(submol_yaml, f)
+        yaml.safe_dump(submol_yaml, f)
 
     with Path(f"/tmp/{genome_path.stem}/input.yaml").open("w+") as f:
-        yaml.dump(input_yaml, f)
+        yaml.safe_dump(input_yaml, f)
 
 
 def create_imput_and_run_pgap(args):
@@ -108,6 +102,9 @@ def create_imput_and_run_pgap(args):
         genome_path=genome_path, genus_species=genus_specied, strain=strain
     )
     run_pgap(output_path, Path(f"/tmp/{genome_path.stem}/input.yaml"))
+    for path in Path(f"/tmp/{genome_path.stem}").iterdir():
+        path.unlink()
+    Path(f"/tmp/{genome_path.stem}").rmdir()
 
 
 if __name__ == "__main__":
@@ -126,31 +123,29 @@ if __name__ == "__main__":
     pgap_inputs = get_pgap_inputs(
         Path("/data/pgap/parsed_genomes/thermococcales"),
         Path(__file__).parents[2] / Path("input_data/thermococcales.tsv"),
-    )[0:16:]
+    )
     pgap_inputs = [
         (
             genome_path,
             strain,
             org_name,
-            Path(f"/home/pgap/proteomes/thermococcales/{genome_path.stem}"),
+            Path(f"/data/pgap/proteomes/thermococcales/{genome_path.stem}"),
         )
         for (genome_path, strain, org_name) in pgap_inputs
     ]
-    print(pgap_inputs)
-    progress_map(create_imput_and_run_pgap, pgap_inputs)
-    # with Pool(8) as p:
-    #     tqdm.tqdm(
-    #         p.imap(
-    #             run_pgap,
-    #             pgap_inputs,
-    #         ),
-    #         total=len(pgap_inputs),
-    #     )
-    # with Pool(8) as p:
-    #     p.map(
-    #         run_pgap,
-    #         get_pgap_inputs(
-    #             Path("/data/pgap/parsed_genomes/alteromonadales"),
-    #             Path("/data/pgap/proteomes/alteromonadales"),
-    #         ),
-    #     )
+    progress_map(create_imput_and_run_pgap, pgap_inputs, n_cpu=8)
+
+    pgap_inputs = get_pgap_inputs(
+        Path("/data/pgap/parsed_genomes/alteromonadales"),
+        Path(__file__).parents[2] / Path("input_data/alteromonadales.tsv"),
+    )
+    pgap_inputs = [
+        (
+            genome_path,
+            strain,
+            org_name,
+            Path(f"/data/pgap/proteomes/alteromonadales/{genome_path.stem}"),
+        )
+        for (genome_path, strain, org_name) in pgap_inputs
+    ]
+    progress_map(create_imput_and_run_pgap, pgap_inputs, n_cpu=8)

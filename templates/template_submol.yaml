@@ -1,9 +1,17 @@
 organism:
-  genus_species:
-  strain:
+    genus_species:
 contact_info:
-  last_name: 'Fauchon'
-  first_name: 'Jules'
-  email: 'fauchon@math.univ-lyon1.fr'
-  organization: 'LBBE'
-  
+    last_name: Fauchon
+    first_name: Jules
+    email: fauchon@math.univ-lyon1.fr
+    organization: DeltaFold
+    department: DeltaFold
+    street: 43 bd du 11 novembre 1918
+    city: VILLEURBANNE
+    state: Auvergne Rhone-Alpes
+    postal_code: "69622"
+    country: France
+authors:
+    - author:  
+        last_name: Fauchon    
+        first_name: Jules
